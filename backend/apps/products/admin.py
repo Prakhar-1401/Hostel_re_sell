@@ -9,11 +9,20 @@ class ProductImageInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'seller', 'category', 'price', 'condition', 'is_available', 'is_sold', 'created_at']
-    list_filter = ['condition', 'is_available', 'is_sold', 'category', 'hostel_name', 'created_at']
+    list_display = ['name', 'get_seller', 'get_category', 'price', 'condition', 'is_available', 'is_sold', 'created_at']
+    list_filter = ['condition', 'is_available', 'is_sold', 'hostel_name', 'created_at']
     search_fields = ['name', 'description', 'seller__full_name', 'seller__email']
+    list_select_related = ['seller', 'category']
     inlines = [ProductImageInline]
     ordering = ['-created_at']
+
+    @admin.display(description='Seller')
+    def get_seller(self, obj):
+        return obj.seller.full_name if obj.seller else '-'
+
+    @admin.display(description='Category')
+    def get_category(self, obj):
+        return obj.category.name if obj.category else '-'
     actions = ['mark_as_spam', 'mark_as_sold']
 
     @admin.action(description='Remove selected listings (spam)')
