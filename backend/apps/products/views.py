@@ -46,7 +46,7 @@ class ProductCreateView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
         return Response(
-            ProductDetailSerializer(product).data,
+            ProductDetailSerializer(product, context={'request': request}).data,
             status=status.HTTP_201_CREATED
         )
 

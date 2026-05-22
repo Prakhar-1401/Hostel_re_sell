@@ -13,9 +13,15 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         if obj.image:
-            request = self.context.get('request')
             url = obj.image.url
-            if request and url.startswith('/'):
+            # Cloudinary URLs are already absolute
+            if url.startswith('http'):
+                return url
+            # For local/relative URLs, build absolute URI
+            request = self.context.get('request')
+            if request:
+                if not url.startswith('/'):
+                    url = '/' + url
                 return request.build_absolute_uri(url)
             return url
         return None
@@ -37,9 +43,15 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_thumbnail(self, obj):
         first_image = obj.images.first()
         if first_image and first_image.image:
-            request = self.context.get('request')
             url = first_image.image.url
-            if request and url.startswith('/'):
+            # Cloudinary URLs are already absolute
+            if url.startswith('http'):
+                return url
+            # For local/relative URLs, build absolute URI
+            request = self.context.get('request')
+            if request:
+                if not url.startswith('/'):
+                    url = '/' + url
                 return request.build_absolute_uri(url)
             return url
         return None
