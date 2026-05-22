@@ -5,15 +5,14 @@ python manage.py collectstatic --no-input
 python manage.py migrate
 
 # Verify Cloudinary configuration
-python -c "
-from django.conf import settings
-import django, os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-django.setup()
+python manage.py shell -c "
 from django.conf import settings
 print(f'DEFAULT_FILE_STORAGE: {settings.DEFAULT_FILE_STORAGE}')
 print(f'CLOUDINARY_CLOUD_NAME: {settings.CLOUDINARY_CLOUD_NAME}')
 print(f'MEDIA_URL: {settings.MEDIA_URL}')
+print(f'CLOUDINARY_STORAGE keys: {list(settings.CLOUDINARY_STORAGE.keys())}')
+import os
+print(f'ENV CLOUDINARY_CLOUD_NAME: {os.environ.get(\"CLOUDINARY_CLOUD_NAME\", \"NOT SET\")}')
 "
 
 # Create superuser if not exists
