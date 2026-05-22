@@ -5,6 +5,10 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
+from django.utils import timezone
+from datetime import timedelta
+import cloudinary.uploader
+
 from .models import Product, ProductImage
 from .serializers import (
     ProductListSerializer,
@@ -13,6 +17,24 @@ from .serializers import (
     ProductUpdateSerializer,
 )
 from .filters import ProductFilter
+
+
+def cleanup_sold_products():
+    """Delete products sold more than 4 days ago, including Cloudinary images."""
+    cutoff = timezone.now() - timedelta(days=4)
+    expired = Product.objects.filter(is_sold=True, sold_at__lte=cutoff)
+    for product in expired:
+        for img in product.images.all():
+            if img.image:
+                try:
+                    # Delete from Cloudinary
+                    public_id = img.image.name
+                    if public_id.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                        public_id = public_id.rsplit('.', 1)[0]
+                    cloudinary.uploader.destroy(public_id)
+                except Exception:
+                    pass
+        product.delete()
 
 
 class ProductListView(generics.ListAPIView):
@@ -24,6 +46,8 @@ class ProductListView(generics.ListAPIView):
     ordering = ['-created_at']
 
     def get_queryset(self):
+        # Auto-cleanup sold products older than 4 days
+        cleanup_sold_products()
         queryset = Product.objects.filter(is_available=True, is_sold=False)
         category_slug = self.request.query_params.get('category')
         if category_slug:

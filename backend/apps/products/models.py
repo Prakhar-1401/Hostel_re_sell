@@ -22,6 +22,7 @@ class Product(models.Model):
     room_number = models.CharField(max_length=20, blank=True)
     is_available = models.BooleanField(default=True)
     is_sold = models.BooleanField(default=False)
+    sold_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -125,6 +125,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if category_name:
             instance.category = Category.get_or_create_category(category_name)
 
+        # Auto-set sold_at when marking as sold
+        if validated_data.get('is_sold') and not instance.is_sold:
+            from django.utils import timezone
+            instance.sold_at = timezone.now()
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
