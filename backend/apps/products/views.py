@@ -6,6 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 from django.utils import timezone
+from django.core.cache import cache
 from datetime import timedelta
 import cloudinary.uploader
 
@@ -20,14 +21,18 @@ from .filters import ProductFilter
 
 
 def cleanup_sold_products():
-    """Delete products sold more than 4 days ago, including Cloudinary images."""
+    """Delete products sold more than 4 days ago. Runs at most once per hour."""
+    cache_key = 'last_cleanup_run'
+    if cache.get(cache_key):
+        return  # Already ran recently
+    cache.set(cache_key, True, 3600)  # Don't run again for 1 hour
+
     cutoff = timezone.now() - timedelta(days=4)
     expired = Product.objects.filter(is_sold=True, sold_at__lte=cutoff)
     for product in expired:
         for img in product.images.all():
             if img.image:
                 try:
-                    # Delete from Cloudinary
                     public_id = img.image.name
                     if public_id.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
                         public_id = public_id.rsplit('.', 1)[0]
